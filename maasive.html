@@ -1,0 +1,68 @@
+<h1>MaaSive.net REST API</h1>
+
+<form id="host-form">
+    <label for="host">Host:</label>
+    <input type="text" name="host" class="full-width" value="http://dev.maasive.net">
+    <label for="api">API Path:</label>
+    <input type="text" name="api" class="full-width" value="/SuperSpock/rescour/">
+    <input type="submit" value="Load MaaSive">
+</form>
+<div id="host-results"><pre><code></code></pre>
+
+</div>
+
+<h3>Auth POST</h3>
+
+<form id="auth-form">
+    <label for="email">Email:</label>
+    <input type="text" name="email">
+    <label for="password">Password:</label>
+    <input type="password" name="password">
+    <input type="submit" value="Login">
+    <input type="button" name="logout" value="Logout">
+</form>
+<div id="auth-results"><pre><code></code></pre>
+
+</div>
+
+<h3>GET</h3>
+<form id="get-form">
+    <label for="path">Path:</label>
+    <input type="text" name="path" class="half-width" value="/listings/">
+    <input type="submit" value="Submit">
+</form>
+<div id="get-results"><pre><code></code></pre>
+
+</div>
+
+<h3>POST</h3>
+<form id="post-form">
+    <label for="path">Path:</label>
+    <input type="text" name="path" class="half-width" value="/listings/">
+        <textarea id="post-body" class="full-width">{"your json":"goes here"}</textarea>
+    <input type="submit" value="Submit">
+</form>
+<div id="post-results"><pre><code></code></pre>
+
+</div>
+
+<h3>PUT</h3>
+<form id="put-form">
+    <label for="path">Path:</label>
+    <input type="text" name="path" class="half-width" value="/listings/">
+        <textarea id="put-body" class="full-width">{"your json":"goes here"}</textarea>
+    <input type="submit" value="Submit">
+</form>
+<div id="put-results"><pre><code></code></pre>
+
+</div>
+
+<h3>DELETE</h3>
+<form id="delete-form">
+    <label for="path">Path:</label>
+    <input type="text" name="path" class="half-width" value="/listings/">
+    <input type="submit" value="Submit">
+</form>
+<div id="delete-results"><pre><code></code></pre>
+
+</div>
