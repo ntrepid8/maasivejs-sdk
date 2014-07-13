@@ -5,11 +5,12 @@
  * Time: 3:36 PM EST
  * Version: 1.1.1
  */
-var Em = window.Em || null;
-var $ = window.$ || null;
+
 
 var maasive = (function(){
     'use strict';
+    var Em = window.Em || null;
+    var $ = window.$ || null;
     var m = {
         host: null,
         useEmRSVP: false,
@@ -36,6 +37,7 @@ var maasive = (function(){
         var error = null;
         if (typeof(args) !== 'object'){
             error = {
+                statusCode: 400,
                 error: 'invalid_arguments',
                 reason: 'arg[0] must be an object'
             };
@@ -46,7 +48,7 @@ var maasive = (function(){
         requestArgs.data = m.processData(args.data);
         var errorHandler = function(error){
             if (m.statusCode.hasOwnProperty(error.statusCode)){
-                m.statusCode[error.statusCode](error);
+                return m.statusCode[error.statusCode](error);
             } else if (window.Ember && m.useEmRSVP) {
                 return Em.RSVP.reject(error);
             } else {
@@ -59,11 +61,35 @@ var maasive = (function(){
                 return deferred.reject(error);
             }).promise();
         } else {
-            requestPromise = $.ajax(requestArgs).then(null, errorHandler);
+            requestPromise = $.ajax(requestArgs);
         }
+        requestPromise.then(null, errorHandler);
         if (Em && m.useEmRSVP) {
             return new Em.RSVP.Promise(function (resolve, reject) {
-                return requestPromise.then(resolve, reject);
+                return requestPromise
+                    .then(function(data, textStatus, jqXHR){
+                        resolve({
+                            data: data,
+                            textStatus: textStatus,
+                            jqXHR: jqXHR
+                        });
+                    }, function(jqXHR, textStatus, errorThrown){
+                        var response, reason;
+                        if (jqXHR.responseText) {
+                            response = $.parseJSON(jqXHR.responseText);
+                        }
+                        if (response.hasOwnProperty('error')) {
+                            reason = response.error.reason || null;
+                        } else {
+                            reason = jqXHR.statusText;
+                        }
+                        reject({
+                            jqXHR: jqXHR,
+                            textStatus: textStatus,
+                            errorThrown: errorThrown,
+                            reason: reason
+                        });
+                    });
             });
         } else {
             return requestPromise;
