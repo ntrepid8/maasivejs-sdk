@@ -6,14 +6,12 @@
  * Version: 1.1.1-beta.1
  */
 
-
-var maasive = (function(){
+var maasive = (function($){
     'use strict';
-    var Em = window.Em || null;
-    var $ = window.$ || null;
     var m = {
         host: null,
-        useEmRSVP: false,
+        $: $,
+        RSVP: null,
         baseRequest: {
             xhrFields: {withCredentials: true},
             dataType: 'json',
@@ -21,7 +19,9 @@ var maasive = (function(){
             contentType: "application/json",
             statusCode: {}
         },
-        statusCode: {}  // attach 'global' handlers to all requests, works for RSVPs too
+        statusCode: {},  // attach 'global' handlers to all requests, works for RSVPs too
+        success: null,  // run this on every request
+        error: null  // run this on every request
     };
     $.support.cors = true;
     m.requireHost = function(){
@@ -33,7 +33,7 @@ var maasive = (function(){
         }
         return data;
     };
-    m.request = function(args){
+    m._request = function(args){
         var error = null;
         if (typeof(args) !== 'object'){
             error = {
@@ -42,32 +42,27 @@ var maasive = (function(){
                 reason: 'arg[0] must be an object'
             };
         }
+        console.log(args);
         m.requireHost();
         var requestArgs = $.extend(true, args, m.baseRequest);
-        requestArgs.url = m.host+args.url;
-        requestArgs.data = m.processData(args.data);
-        var errorHandler = function(error){
-            if (m.statusCode.hasOwnProperty(error.statusCode)){
-                return m.statusCode[error.statusCode](error);
-            } else if (window.Ember && m.useEmRSVP) {
-                return Em.RSVP.reject(error);
-            } else {
-              return error;
-            }
-        };
-        var requestPromise;
-        if (error){
-            requestPromise = $.Deferred(function(deferred){
-                return deferred.reject(error);
-            }).promise();
-        } else {
-            requestPromise = $.ajax(requestArgs);
+        if (!(args.url.substring(0, 4) === 'http' || args.url.substring(0, 5) === 'https')){
+            requestArgs.url = m.host+args.url;
         }
-        requestPromise.then(null, errorHandler);
-        if (Em && m.useEmRSVP) {
-            return new Em.RSVP.Promise(function (resolve, reject) {
-                return requestPromise
-                    .then(function(data, textStatus, jqXHR){
+        requestArgs.data = m.processData(args.data);
+        var request;
+        if (error){
+            if (m.RSVP){
+                request = new m.RSVP.Promise(function(resolve, reject){
+                    reject(error);
+                });
+            } else {
+                request = new $.Deferred().promise();
+                request.reject(error);
+            }
+        } else {
+            if (m.RSVP){
+                request = new m.RSVP.Promise(function(resolve, reject){
+                    $.ajax(requestArgs).then(function(data, textStatus, jqXHR){
                         resolve({
                             data: data,
                             textStatus: textStatus,
@@ -78,7 +73,7 @@ var maasive = (function(){
                         if (jqXHR.responseText) {
                             response = $.parseJSON(jqXHR.responseText);
                         }
-                        if (response.hasOwnProperty('error')) {
+                        if (response && response.hasOwnProperty('error')) {
                             reason = response.error.reason || null;
                         } else {
                             reason = jqXHR.statusText;
@@ -90,10 +85,15 @@ var maasive = (function(){
                             reason: reason
                         });
                     });
-            });
-        } else {
-            return requestPromise;
+                });
+            } else {
+                request = $.ajax(requestArgs);
+            }
         }
+        return request;
+    };
+    m.request = function(args){
+        return m._request(args).then(m.success, m.error);
     };
     m.auth = {
         login: function (email, password, onSuccess, onError) {
@@ -157,14 +157,12 @@ var maasive = (function(){
             }).then(onSuccess, onError);
         },
         getCurrentUser: function(onSuccess, onError){
-            return m.request({
+            return m._request({
                 url: '/auth/user/',
                 type: 'GET'
-            }).then(
-                function(data){
-                    return data[0];
-                }
-            ).then(onSuccess, onError);
+            }).then(function(response){
+                return response.data[0];
+            }).then(onSuccess, onError);
         }
     };
     m.options = function(url, onSuccess, onError){
@@ -199,4 +197,4 @@ var maasive = (function(){
         }).then(onSuccess, onError);
     };
     return m;
-}());
+}(window.jQuery));
