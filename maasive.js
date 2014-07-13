@@ -42,7 +42,6 @@ var maasive = (function($){
                 reason: 'arg[0] must be an object'
             };
         }
-        console.log(args);
         m.requireHost();
         var requestArgs = $.extend(true, args, m.baseRequest);
         if (!(args.url.substring(0, 4) === 'http' || args.url.substring(0, 5) === 'https')){
